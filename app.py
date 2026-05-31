@@ -111,72 +111,147 @@ with tab_ml:
     if model is None:
         st.error("File artifacts (`.pkl`) tidak ditemukan. Pastikan file model, imputer, dan encoder dari Notebook diletakkan di folder yang sama.")
     else:
-        st.subheader("Upload Dataset untuk Prediksi Massal")
-        st.write("Unggah file CSV berisi spesifikasi rumah untuk memicu pipeline prediksi otomatis.")
+ 
+        # UTAMA: PREDIKSI OTOMATIS DATASET TERSEMAT (test.csv)
+
+        st.subheader("Dataset Ames Tersemat (test.csv)")
+        st.write("Sistem mendeteksi file bawaan dan menjalankan pipeline prediksi secara otomatis.")
         
-        uploaded_file = st.file_uploader("Pilih file CSV:", type=["csv"])
-        
-        if uploaded_file is not None:
-            df_input = pd.read_csv(uploaded_file)
-            st.success("✅ File berhasil diunggah! Berikut adalah 5 baris data teratas:")
+        try:
+            df_input = pd.read_csv("test.csv")
+            st.success("✅ File berhasil dimuat otomatis! Berikut adalah 5 baris data teratas:")
             st.dataframe(df_input.head(5), use_container_width=True)
             
-            # Trigger button untuk menjalankan pipeline prediksi asli
-            predict_btn = st.button("Jalankan Pipeline Prediksi", use_container_width=True, type="primary")
+            # Pemicu otomatis (Auto-trigger) berjalan langsung tanpa menunggu tombol diklik
+            with st.spinner("Pipeline otomatis berjalan... Membersihkan data dan mengeksekusi model Ridge..."):
+                try:
+                    df_proc = df_input.copy()
+                    model_features = model.feature_names_in_
+                    
+                    # 1. Pipeline Imputasi Numerik (Median dari Train Set)
+                    num_cols = num_imputer.feature_names_in_
+                    num_cols_present = [c for c in num_cols if c in df_proc.columns]
+                    if len(num_cols_present) > 0:
+                        df_proc[num_cols_present] = num_imputer.transform(df_proc[num_cols_present])
+                        
+                    # 2. Pipeline Imputasi Kategorikal (Modus dari Train Set)
+                    cat_cols = cat_imputer.feature_names_in_
+                    cat_cols_present = [c for c in cat_cols if c in df_proc.columns]
+                    if len(cat_cols_present) > 0:
+                        df_proc[cat_cols_present] = cat_imputer.transform(df_proc[cat_cols_present])
+                        
+                    # 3. Categorical Encoding (One-Hot)
+                    encoded_features = encoder.transform(df_proc[cat_cols_present])
+                    encoded_cols_names = encoder.get_feature_names_out(cat_cols_present)
+                    encoded_df = pd.DataFrame(encoded_features, columns=encoded_cols_names, index=df_proc.index)
+                    
+                    # 4. Rekonstruksi Dimensi & Penyelarasan Kolom
+                    final_input = pd.concat([df_proc[num_cols_present], encoded_df], axis=1)
+                    final_input = final_input.reindex(columns=model_features, fill_value=0)
+                    
+                    # 5. Eksekusi Prediksi Ridge Model & Inverse Log Transform (np.expm1)
+                    pred_log = model.predict(final_input)
+                    predictions = np.expm1(pred_log)
+                    
+                    # 6. Tampilkan Hasil Prediksi Akhir
+                    df_output = df_input.copy()
+                    df_output['SalePrice_Predicted'] = predictions
+                    
+                    st.success("🎉 Prediksi Otomatis Selesai!")
+                    
+                    # Menampilkan kolom ID dan Hasil Prediksi
+                    display_cols = ['Id', 'SalePrice_Predicted'] if 'Id' in df_output.columns else ['SalePrice_Predicted']
+                    st.subheader("Hasil Estimasi Nilai Properti (Data Tersemat):")
+                    st.dataframe(df_output[display_cols].head(10), use_container_width=True)
+                    
+                    # Sediakan tombol download hasil untuk user
+                    csv_data = df_output.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="Download Hasil Prediksi Lengkap (CSV)",
+                        data=csv_data,
+                        file_name="hasil_prediksi_properti.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                        key="download_embedded_csv"
+                    )
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan saat memproses file otomatis: {e}")
+                    
+        except FileNotFoundError:
+            st.error("⚠️ File `test.csv` tidak ditemukan di direktori. Pastikan file `test.csv` berada di dalam folder proyek yang sama dengan `app.py`.")
+
+        st.divider()
+
+        # TERPISAH: PENGUJIAN KUSTOM BAGI USER YANG INGIN UNGGAH FILE LAIN
+
+        with st.expander("🛠️ Klik di sini jika Anda ingin mengunggah file CSV eksternal lainnya"):
+            st.subheader("Upload Dataset untuk Prediksi Massal")
+            st.write("Unggah file CSV berisi spesifikasi rumah untuk memicu pipeline prediksi otomatis.")
             
-            if predict_btn:
-                with st.spinner("Pipeline sedang berjalan... Membersihkan data dan mengeksekusi model Ridge..."):
-                    try:
-                        df_proc = df_input.copy()
-                        model_features = model.feature_names_in_
-                        
-                        # 1. Pipeline Imputasi Numerik (Median dari Train Set)
-                        num_cols = num_imputer.feature_names_in_
-                        num_cols_present = [c for c in num_cols if c in df_proc.columns]
-                        if len(num_cols_present) > 0:
-                            df_proc[num_cols_present] = num_imputer.transform(df_proc[num_cols_present])
+            uploaded_file = st.file_uploader("Pilih file CSV:", type=["csv"], key="custom_file_uploader")
+            
+            if uploaded_file is not None:
+                df_input_custom = pd.read_csv(uploaded_file)
+                st.success("✅ File berhasil diunggah! Berikut adalah 5 baris data teratas:")
+                st.dataframe(df_input_custom.head(5), use_container_width=True)
+                
+                # Trigger button khusus untuk menjalankan pipeline data kustom
+                predict_btn = st.button("Jalankan Pipeline Prediksi", use_container_width=True, type="primary")
+                
+                if predict_btn:
+                    with st.spinner("Pipeline sedang berjalan... Membersihkan data dan mengeksekusi model Ridge..."):
+                        try:
+                            df_proc_custom = df_input_custom.copy()
+                            model_features_custom = model.feature_names_in_
                             
-                        # 2. Pipeline Imputasi Kategorikal (Modus dari Train Set)
-                        cat_cols = cat_imputer.feature_names_in_
-                        cat_cols_present = [c for c in cat_cols if c in df_proc.columns]
-                        if len(cat_cols_present) > 0:
-                            df_proc[cat_cols_present] = cat_imputer.transform(df_proc[cat_cols_present])
+                            # 1. Pipeline Imputasi Numerik (Median dari Train Set)
+                            num_cols_custom = num_imputer.feature_names_in_
+                            num_cols_present_custom = [c for c in num_cols_custom if c in df_proc_custom.columns]
+                            if len(num_cols_present_custom) > 0:
+                                df_proc_custom[num_cols_present_custom] = num_imputer.transform(df_proc_custom[num_cols_present_custom])
+                                
+                            # 2. Pipeline Imputasi Kategorikal (Modus dari Train Set)
+                            cat_cols_custom = cat_imputer.feature_names_in_
+                            cat_cols_present_custom = [c for c in cat_cols_custom if c in df_proc_custom.columns]
+                            if len(cat_cols_present_custom) > 0:
+                                df_proc_custom[cat_cols_present_custom] = cat_imputer.transform(df_proc_custom[cat_cols_present_custom])
+                                
+                            # 3. Categorical Encoding (One-Hot)
+                            encoded_features_custom = encoder.transform(df_proc_custom[cat_cols_present_custom])
+                            encoded_cols_names_custom = encoder.get_feature_names_out(cat_cols_present_custom)
+                            encoded_df_custom = pd.DataFrame(encoded_features_custom, columns=encoded_cols_names_custom, index=df_proc_custom.index)
                             
-                        # 3. Categorical Encoding (One-Hot)
-                        encoded_features = encoder.transform(df_proc[cat_cols_present])
-                        encoded_cols_names = encoder.get_feature_names_out(cat_cols_present)
-                        encoded_df = pd.DataFrame(encoded_features, columns=encoded_cols_names, index=df_proc.index)
-                        
-                        # 4. Rekonstruksi Dimensi & Penyelarasan Kolom
-                        final_input = pd.concat([df_proc[num_cols_present], encoded_df], axis=1)
-                        final_input = final_input.reindex(columns=model_features, fill_value=0)
-                        
-                        # 5. Eksekusi Prediksi Ridge Model & Inverse Log Transform (np.expm1)
-                        pred_log = model.predict(final_input)
-                        predictions = np.expm1(pred_log)
-                        
-                        # 6. Tampilkan Hasil Prediksi Akhir
-                        df_output = df_input.copy()
-                        df_output['SalePrice_Predicted'] = predictions
-                        
-                        st.success("🎉 Prediksi Massal Selesai!")
-                        
-                        # Menampilkan kolom ID dan Hasil Prediksi
-                        display_cols = ['Id', 'SalePrice_Predicted'] if 'Id' in df_output.columns else ['SalePrice_Predicted']
-                        st.subheader("Hasil Estimasi Nilai Properti:")
-                        st.dataframe(df_output[display_cols].head(10), use_container_width=True)
-                        
-                        # Sediakan tombol download hasil untuk user
-                        csv_data = df_output.to_csv(index=False).encode('utf-8')
-                        st.download_button(
-                            label="Download Hasil Prediksi Lengkap (CSV)",
-                            data=csv_data,
-                            file_name="hasil_prediksi_properti.csv",
-                            mime="text/csv",
-                            use_container_width=True
-                        )
-                    except Exception as e:
-                        st.error(f"Terjadi kesalahan saat memproses file: {e}")
+                            # 4. Rekonstruksi Dimensi & Penyelarasan Kolom
+                            final_input_custom = pd.concat([df_proc_custom[num_cols_present_custom], encoded_df_custom], axis=1)
+                            final_input_custom = final_input_custom.reindex(columns=model_features_custom, fill_value=0)
+                            
+                            # 5. Eksekusi Prediksi Ridge Model & Inverse Log Transform (np.expm1)
+                            pred_log_custom = model.predict(final_input_custom)
+                            predictions_custom = np.expm1(pred_log_custom)
+                            
+                            # 6. Tampilkan Hasil Prediksi Akhir
+                            df_output_custom = df_input_custom.copy()
+                            df_output_custom['SalePrice_Predicted'] = predictions_custom
+                            
+                            st.success("🎉 Prediksi Massal Selesai!")
+                            
+                            # Menampilkan kolom ID dan Hasil Prediksi
+                            display_cols_custom = ['Id', 'SalePrice_Predicted'] if 'Id' in df_output_custom.columns else ['SalePrice_Predicted']
+                            st.subheader("Hasil Estimasi Nilai Properti (Data Kustom):")
+                            st.dataframe(df_output_custom[display_cols_custom].head(10), use_container_width=True)
+                            
+                            # Sediakan tombol download hasil untuk user
+                            csv_data_custom = df_output_custom.to_csv(index=False).encode('utf-8')
+                            st.download_button(
+                                label="Download Hasil Prediksi Lengkap (CSV)",
+                                data=csv_data_custom,
+                                file_name="hasil_prediksi_properti_kustom.csv",
+                                mime="text/csv",
+                                use_container_width=True,
+                                key="download_custom_csv"
+                            )
+                        except Exception as e:
+                            st.error(f"Terjadi kesalahan saat memproses file: {e}")
 
 
 # TAB 3 — EDA DASHBOARD (Visualisasi Data & Performa)
