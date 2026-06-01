@@ -5,9 +5,9 @@ import plotly.express as px
 import plotly.figure_factory as ff
 import joblib
 
-# ══════════════════════════════════════════════
+
 # CONFIGURASI HALAMAN UTAMA
-# ══════════════════════════════════════════════
+
 st.set_page_config(
     page_title="Alamsyah Bima Pratomo | Data & AI Portfolio",
     page_icon="🤖",
@@ -32,7 +32,7 @@ def load_ml_components():
 
 num_imputer, cat_imputer, encoder, model = load_ml_components()
 
-# Membuat Navigasi Menggunakan Tabs Sesuai Struktur Portfolio Anda
+# Membuat Navigasi Menggunakan Tabs Sesuai Struktur
 tab_home, tab_ml, tab_eda = st.tabs([
     "🏠 Home",
     "🤖 Machine Learning House Price Prediction",
@@ -40,9 +40,9 @@ tab_home, tab_ml, tab_eda = st.tabs([
 ])
 
 
-# ══════════════════════════════════════════════
-# TAB 1 — HOME (Branding, Latar Belakang & Kamus Fitur)
-# ══════════════════════════════════════════════
+
+# TAB 1 — HOME (Branding, Latar Belakang & Fitur)
+
 with tab_home:
     st.title("Hi, I'm Alamsyah Bima 👋")
     st.subheader("Architectural Designer, AI & Data Science Engineer")
@@ -111,9 +111,9 @@ with tab_home:
             """)
             st.write("**Impact:** Cut manual data entry errors by 40%.")
 
-    # ==========================================================
-    # SEKSI TAMBAHAN: LATAR BELAKANG DATASET & GLOSARIUM FITUR
-    # ==========================================================
+  
+    # LATAR BELAKANG DATASET & GLOSARIUM FITUR
+
     st.divider()
     
     col_bg, col_glosarium = st.columns([1, 1])
@@ -121,7 +121,7 @@ with tab_home:
     with col_bg:
         st.markdown("### 📖 Latar Belakang Dataset")
         st.markdown("""
-        **Ames Housing Dataset** dikompilasi oleh **Dean De Cock** dan dirilis secara resmi melalui *Journal of Statistics Education* pada tahun 2011. Dataset ini dirancang khusus sebagai alternatif modern yang jauh lebih kaya dan akurat untuk menggantikan Boston Housing Dataset yang sudah usang dan bias.
+        **Ames Housing Dataset** dikompilasi oleh **Dean De Cock** dan dirilis secara resmi melalui *Journal of Statistics Education* pada tahun 2011. Dataset ini dirancang khusus sebagai alternatif modern yang jauh lebih kaya dan akurat untuk menggantikan Boston Housing Dataset yang sudah usang and bias.
         
         Data ini mencakup rekaman transaksi penjualan properti residensial di kota **Ames, Iowa, Amerika Serikat** sepanjang periode tahun 2006 hingga 2010. Berbeda dengan dataset perumahan konvensional yang hanya melihat faktor makro seperti jumlah kamar, Ames Housing menyajikan landasan data spasial mikro yang sangat komprehensif—mulai dari tipe fondasi, kualitas material atap, kondisi area basemen, hingga jenis kedekatan akses jalan raya. 
         
@@ -154,9 +154,9 @@ with tab_home:
             """)
 
 
-# ══════════════════════════════════════════════
-# TAB 2 — ML ENGINEER (Automated System & Custom User Split)
-# ══════════════════════════════════════════════
+
+# TAB 2 — ML model
+
 with tab_ml:
     st.title("Bagian 3: Model Prediction Interface")
     st.write("Trained on Ames Housing Dataset · **Ridge Regression Model** · R² = 92.60%")
@@ -165,7 +165,7 @@ with tab_ml:
     if model is None:
         st.error("File artifacts (`.pkl`) tidak ditemukan. Pastikan file model, imputer, diletakkan di folder yang sama.")
     else:
-        # UTAMA: PREDIKSI OTOMATIS DATASET TERSEMAT (test.csv)
+        # PREDIKSI OTOMATIS DATASET TERSEMAT (test.csv)
         st.subheader("Dataset Ames Tersemat (test.csv)")
         st.write("Sistem mendeteksi file bawaan dan menjalankan pipeline prediksi secara otomatis.")
         
@@ -274,9 +274,9 @@ with tab_ml:
                             st.error(f"Terjadi kesalahan: {e}")
 
 
-# ══════════════════════════════════════════════
+
 # TAB 3 — EDA DASHBOARD & MODEL VISUALIZATION (Multi-Page Split)
-# ══════════════════════════════════════════════
+
 with tab_eda:
     st.title("Visualisasi Dataset & Performa Model")
     st.write("Eksplorasi interaktif korelasi fitur sebelum split dan metrik evaluasi final model.")
@@ -290,18 +290,46 @@ with tab_eda:
 
     if selected_view == "Ames Dataset - Korelasi Fitur (Bar Plot)":
         st.subheader("Korelasi Fitur Numerikal Sebelum Split Terhadap Target Value (SalePrice)")
+        
+        # Daftar 37 fitur lengkap secara urut ke dalam visualisasi bar plot
         df_corr_ames = pd.DataFrame({
-            "Fitur": ["OverallQual", "GrLivArea", "GarageCars", "GarageArea", "TotalBsmtSF", "1stFlrSF", "FullBath", "TotRmsAbvGrd", "YearBuilt", "YearRemodAdd", "KitchenAbvGr"],
-            "Korelasi": [0.7909, 0.7086, 0.6404, 0.6234, 0.6135, 0.6058, 0.5606, 0.5337, 0.5228, 0.5071, -0.1359]
+            "Fitur": [
+                "OverallQual", "GrLivArea", "GarageCars", "GarageArea", "TotalBsmtSF", 
+                "1stFlrSF", "FullBath", "TotRmsAbvGrd", "YearBuilt", "YearRemodAdd", 
+                "GarageYrBlt", "MasVnrArea", "Fireplaces", "BsmtFinSF1", "LotFrontage", 
+                "WoodDeckSF", "2ndFlrSF", "OpenPorchSF", "HalfBath", "LotArea", 
+                "BsmtFullBath", "BsmtUnfSF", "BedroomAbvGr", "ScreenPorch", "PoolArea", 
+                "MoSold", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal", 
+                "Id", "LowQualFinSF", "YrSold", "OverallCond", "MSSubClass", 
+                "EnclosedPorch", "KitchenAbvGr"
+            ],
+            "Korelasi": [
+                0.7909, 0.7086, 0.6404, 0.6234, 0.6135, 
+                0.6058, 0.5606, 0.5337, 0.5228, 0.5071, 
+                0.4864, 0.4774, 0.4669, 0.3864, 0.3518, 
+                0.3244, 0.3193, 0.3159, 0.2841, 0.2638, 
+                0.2271, 0.2144, 0.1682, 0.1114, 0.0924, 
+                0.0464, 0.0446, -0.0114, -0.0168, -0.0212, 
+                -0.0219, -0.0256, -0.0289, -0.0778, -0.0843, 
+                -0.1285, -0.1359
+            ]
         }).sort_values(by="Korelasi", ascending=True)
 
-        fig_corr = px.bar(df_corr_ames, x="Korelasi", y="Fitur", orientation="h", color="Korelasi", color_continuous_scale="Viridis", height=500)
+        fig_corr = px.bar(
+            df_corr_ames, 
+            x="Korelasi", 
+            y="Fitur", 
+            orientation="h", 
+            color="Korelasi", 
+            color_continuous_scale="Viridis", 
+            height=800  # Ditambah tinggi menjadi 800 agar 37 fitur terbaca lega dan rapi
+        )
         st.plotly_chart(fig_corr, use_container_width=True)
 
     elif selected_view == "Ames Dataset - Distribusi & Skewness Fitur":
         st.subheader("Analisis Distribusi Variabel & Deteksi Skewness")
         
-        # Perbaikan: Mengganti parameter lawas on_bad_lines='skip' agar kompatibel dengan Pandas versi terbaru
+        # Perbaikan krusial: Memperbaiki parameter on_bad_lines='skip' untuk menghilangkan TypeError di server cloud
         active_df = st.session_state['df_custom_shared'] if st.session_state['df_custom_shared'] is not None else pd.read_csv("test.csv", on_bad_lines='skip') if pd.read_csv else None
         
         if active_df is not None:
