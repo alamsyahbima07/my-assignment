@@ -14,7 +14,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# Inisialisasi Session State untuk menampung data lintas Tab
+# Inisialisasi Session State 
 if 'df_custom_shared' not in st.session_state:
     st.session_state['df_custom_shared'] = None
 
@@ -32,11 +32,11 @@ def load_ml_components():
 
 num_imputer, cat_imputer, encoder, model = load_ml_components()
 
-# Membuat Navigasi Menggunakan Tabs Sesuai Struktur Portfolio Anda
+# Membuat Navigasi Menggunakan Tabs 
 tab_home, tab_ml, tab_eda = st.tabs([
     "🏠 Home",
-    "🤖 Model Machine Learning Assignment",
-    "📊 EDA Dashboard & Analytics Assignment",
+    "🤖 Model Machine Learning House Prediction",
+    "📊 EDA Dashboard & Analytics House Prediction",
 ])
 
 
@@ -78,7 +78,7 @@ with tab_home:
 
     with p1:
         with st.container(border=True):
-            st.markdown("### 🏠 Ames House Price Prediction")
+            st.markdown("### 🏠 House Price Prediction With Streamlit")
             st.write("""
             End-to-end machine learning pipeline utilizing **Ridge Regression** to predict property values. 
             Features strict missing value handling and logarithmic target transformations.
