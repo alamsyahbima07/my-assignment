@@ -35,8 +35,8 @@ num_imputer, cat_imputer, encoder, model = load_ml_components()
 # Membuat Navigasi Menggunakan Tabs Sesuai Struktur Portfolio Anda
 tab_home, tab_ml, tab_eda = st.tabs([
     "🏠 Home",
-    "🤖 ML Engineer",
-    "📊 EDA Dashboard & Analytics",
+    "🤖 Machine Learning House Price Prediction",
+    "📊 EDA Dashboard & Analytics House Price Prediction",
 ])
 
 
@@ -78,7 +78,7 @@ with tab_home:
 
     with p1:
         with st.container(border=True):
-            st.markdown("### 🏠 Ames House Price Prediction")
+            st.markdown("### 🏠 Ames House Price Prediction With Streamlit")
             st.markdown("""
             **Advanced Regression Modeling with Ridge Framework**
             
@@ -91,7 +91,7 @@ with tab_home:
             * **Regularized Modeling:** Penerapan algoritma *Ridge Regression* dengan optimasi hyperparameter untuk menekan efek multikolinearitas dan mencegah risiko *overfitting* pada dimensi fitur yang padat.
             """)
             st.write("**R² Score:** 92.60% · **MAE:** $15,726.32 · **RMSE:** $21,438.90")
-            st.info("👉 Simulasikan prediksi massal otomatis secara langsung di tab **🤖 ML Engineer**.")
+            st.info("👉 Simulasikan prediksi massal otomatis secara langsung di tab **🤖 Machine Learning House Price Prediction**.")
 
     with p2:
         with st.container(border=True):
