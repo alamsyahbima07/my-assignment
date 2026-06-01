@@ -300,7 +300,9 @@ with tab_eda:
 
     elif selected_view == "Ames Dataset - Distribusi & Skewness Fitur":
         st.subheader("Analisis Distribusi Variabel & Deteksi Skewness")
-        active_df = st.session_state['df_custom_shared'] if st.session_state['df_custom_shared'] is not None else pd.read_csv("test.csv", error_bad_lines=False) if pd.read_csv else None
+        
+        # Perbaikan: Mengganti parameter lawas on_bad_lines='skip' agar kompatibel dengan Pandas versi terbaru
+        active_df = st.session_state['df_custom_shared'] if st.session_state['df_custom_shared'] is not None else pd.read_csv("test.csv", on_bad_lines='skip') if pd.read_csv else None
         
         if active_df is not None:
             numerical_columns = active_df.select_dtypes(include=[np.number]).columns.tolist()
