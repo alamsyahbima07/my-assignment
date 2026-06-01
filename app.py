@@ -35,8 +35,8 @@ num_imputer, cat_imputer, encoder, model = load_ml_components()
 # Membuat Navigasi Menggunakan Tabs Sesuai Struktur Portfolio Anda
 tab_home, tab_ml, tab_eda = st.tabs([
     "🏠 Home",
-    "🤖 ML Engineer",
-    "📊 EDA Dashboard & Analytics",
+    "🤖 Model Machine Learning Assignment",
+    "📊 EDA Dashboard & Analytics Assignment",
 ])
 
 
@@ -106,7 +106,7 @@ with tab_home:
 
 
 
-# TAB 2 — ML ENGINEER (Automated System & Custom User Split)
+# TAB 2 —  (Automated System & Custom User Split)
 
 with tab_ml:
     st.title("Bagian 3: Model Prediction Interface")
