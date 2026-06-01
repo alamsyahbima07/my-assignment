@@ -402,10 +402,10 @@ with tab_eda:
         st.subheader("Matriks Kebingungan (Confusion Matrix)")
         
         st.warning("""
-        ⚠️ **Konteks Pemodelan:** Dataset Ames asli Anda menggunakan model **Ridge Regression** untuk memprediksi harga kontinu (Dolar), 
-        sehingga secara matematis tidak memiliki Confusion Matrix bawaan. 
+        ⚠️ **Konteks Pemodelan:** Dataset Ames menggunakan model **Ridge Regression** untuk memprediksi harga kontinu (Dolar), 
+        sehingga secara matematis tidak memiliki Confusion Matrix. 
         
-        Namun, untuk memenuhi kebutuhan standar presentasi portfolio klasifikasi ekonomi/properti, bagian ini menampilkan 
+        Namun, Pada bagian ini menampilkan 
         **Simulasi Klasifikasi Kategori Rumah (Luxury vs Standard)** menggunakan ambang batas (*threshold*) harga median pasaran $163,000.
         """)
 
