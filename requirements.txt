@@ -3,8 +3,9 @@ pandas
 numpy
 matplotlib
 seaborn
+scipy
 scikit-learn==1.4.0
 joblib
-plotly
+plotly==5.18.0
 xgboost
 lightgbm

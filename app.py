@@ -2,16 +2,21 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.figure_factory as ff
 import joblib
 
-# ══════════════════════════════════════════════
+
 # CONFIGURASI HALAMAN UTAMA
-# ══════════════════════════════════════════════
+
 st.set_page_config(
     page_title="Alamsyah Bima Pratomo | Data & AI Portfolio",
     page_icon="🤖",
     layout="wide",
 )
+
+# Inisialisasi Session State untuk menampung data lintas Tab
+if 'df_custom_shared' not in st.session_state:
+    st.session_state['df_custom_shared'] = None
 
 # Load Artifacts Hasil dari Notebook
 @st.cache_resource
@@ -176,11 +181,11 @@ with tab_ml:
                     st.error(f"Terjadi kesalahan saat memproses file otomatis: {e}")
                     
         except FileNotFoundError:
-            st.error("⚠️ File `test.csv` tidak ditemukan di direktori. Pastikan file `test.csv` berada di dalam folder proyek yang sama dengan `app.py`.")
+            st.error("⚠️ File `test.csv` tidak ditemukan di direktori. Pastikan file `test.csv` berada di dalam folder yang sama dengan `app.py`.")
 
         st.divider()
 
-        # PENGUJIAN KUSTOM BAGI USER YANG INGIN UNGGAH FILE LAIN 
+        # PENGUJIAN KUSTOM BAGI USER YANG INGIN UNGGAH FILE LAIN (Pemisahan Terisolasi)
         st.subheader("🛠️ Panel Eksperimen Pengguna Baru")
         with st.expander("Klik di sini untuk mengunggah berkas eksternal kustom & simulasi terpisah"):
             st.markdown("### Upload Dataset untuk Prediksi Massal")
@@ -190,6 +195,9 @@ with tab_ml:
             
             if uploaded_file is not None:
                 df_input_custom = pd.read_csv(uploaded_file)
+                # Menyimpan berkas kustom ke session state agar bisa diakses oleh Tab 3 (EDA)
+                st.session_state['df_custom_shared'] = df_input_custom
+                
                 st.success("✅ File kustom berhasil diunggah! Berikut adalah 5 baris data teratas:")
                 st.dataframe(df_input_custom.head(5), use_container_width=True)
                 
@@ -202,7 +210,6 @@ with tab_ml:
                             df_proc_custom = df_input_custom.copy()
                             model_features_custom = model.feature_names_in_
                             
-                            # Executing identical pipelines for custom data
                             num_cols_custom = num_imputer.feature_names_in_
                             num_cols_present_custom = [c for c in num_cols_custom if c in df_proc_custom.columns]
                             if len(num_cols_present_custom) > 0:
@@ -243,7 +250,6 @@ with tab_ml:
                             st.error(f"Terjadi kesalahan saat memproses file: {e}")
 
 
-
 # TAB 3 — EDA DASHBOARD & MODEL VISUALIZATION (Multi-Page Split)
 
 with tab_eda:
@@ -251,14 +257,14 @@ with tab_eda:
     st.write("Eksplorasi interaktif korelasi fitur sebelum split dan metrik evaluasi final model.")
     st.divider()
 
-    # Opsi interaktif bagi pengguna untuk memilih komponen visualisasi (Menjawab kebutuhan pisah halaman)
+    # Opsi interaktif bagi pengguna untuk memilih komponen visualisasi 
     selected_view = st.selectbox(
         "Pilih Halaman Analisis yang Ingin Ditampilkan:", 
-        ["Ames Dataset - Korelasi Fitur (Bar Plot)", "Ridge Regression - Metrik Performa Model"]
+        ["Ames Dataset - Korelasi Fitur (Bar Plot)", "Ames Dataset - Distribusi & Skewness Fitur", "Ridge Regression - Metrik Performa Model"]
     )
     st.divider()
 
-    # HALAMAN PERTAMA: ANALISIS FITUR EDA
+    # HALAMAN PERTAMA: ANALISIS KORELASI FITUR EDA
     if selected_view == "Ames Dataset - Korelasi Fitur (Bar Plot)":
         st.subheader("Korelasi Fitur Numerikal Sebelum Split Terhadap Target Value (SalePrice)")
         st.write("Visualisasi bar plot di bawah menunjukkan koefisien korelasi Pearson dari fitur utama sebelum data dipisahkan.")
@@ -313,7 +319,90 @@ with tab_eda:
             * **KitchenAbvGr (-0.13):** Jumlah dapur di atas permukaan tanah memiliki korelasi negatif terbesar. Hal ini mengindikasikan bahwa properti dengan banyak dapur cenderung merupakan tipe rumah sekat/kontrakan (*duplex*), yang secara rata-rata nilai jualnya lebih rendah di pasar dibandingkan rumah tunggal (*single-family homes*).
             """)
 
-    # HALAMAN KEDUA: EVALUASI PERFORMA MODEL & INTERACTIVE CHOOSE MODEL
+    # HALAMAN KEDUA: FITUR BARU - VISUALISASI DISTRIBUSI & SKEWNESS DATA
+    elif selected_view == "Ames Dataset - Distribusi & Skewness Fitur":
+        st.subheader("Analisis Distribusi Variabel & Deteksi Skewness")
+        st.write("Gunakan panel interaktif ini untuk memeriksa apakah suatu kolom numerik terdistribusi secara normal atau memiliki kemiringan (*skewed distribution*).")
+
+        # Logika Penentuan Sumber Data Dinamis (Mendukung Data Pengunjung)
+        if st.session_state['df_custom_shared'] is not None:
+            st.info("🔄 Menggunakan repositori data kustom yang baru saja diunggah pengguna pada Tab ML Engineer.")
+            active_df = st.session_state['df_custom_shared']
+        else:
+            st.warning("📋 Data Kustom Pengguna kosong. Menampilkan data bawaan sistem (`test.csv`) sebagai sampel analisis.")
+            try:
+                active_df = pd.read_csv("test.csv")
+            except FileNotFoundError:
+                active_df = None
+                st.error("Gagal melacak data referensi bawaan sistem (`test.csv`).")
+
+        if active_df is not None:
+            # Memfilter hanya kolom numerik saja (int/float) agar aman saat divisualisasikan
+            numerical_columns = active_df.select_dtypes(include=[np.number]).columns.tolist()
+            
+            # Drop kolom ID jika ada, agar pengguna tidak bingung melihat distribusinya
+            if 'Id' in numerical_columns:
+                numerical_columns.remove('Id')
+
+            # Drop kolom target bawaan 'medv' atau 'SalePrice' jika tidak ingin dianalisis langsung
+            for col_omit in ['medv', 'SalePrice']:
+                if col_omit in numerical_columns:
+                    numerical_columns.remove(col_omit)
+
+            # Dropdown pilihan kolom bagi pengguna
+            target_col = st.selectbox("Pilih Kolom Numerik untuk Ditinjau Distribusinya:", numerical_columns)
+            
+            # Membersihkan nilai kosong (NaN) agar fungsi ff.create_distplot tidak crash
+            clean_series = active_df[target_col].dropna()
+            
+            if len(clean_series) > 5:
+                # Perhitungan Nilai Statistik Skewness Riil
+                skew_val = clean_series.skew()
+                
+                # Menentukan deskripsi kemiringan berdasarkan nilai statistika skewness
+                if abs(skew_val) < 0.5:
+                    skew_desc = "Distribusi Relatif Normal (Simetris)"
+                    skew_color = "green"
+                elif skew_val >= 0.5:
+                    skew_desc = "Positive Skewness (Ekor Kanan Panjang - Didominasi Nilai Rendah)"
+                    skew_color = "orange"
+                else:
+                    skew_desc = "Negative Skewness (Ekor Kiri Panjang - Didominasi Nilai Tinggi)"
+                    skew_color = "red"
+
+                # Menampilkan Informasi Statistik Utama
+                col_s1, col_s2, col_s3 = st.columns(3)
+                col_s1.metric(label=f"Nilai Skewness Kolom: {target_col}", value=f"{skew_val:.4f}")
+                col_s2.markdown(f"**Interpretasi Bentuk:** \n<span style='color:{skew_color}; font-weight:bold;'>{skew_desc}</span>", unsafe_allow_html=True)
+                col_s3.markdown(f"**Ringkasan Nilai:** \nMean: `{clean_series.mean():,.2f}`  ·  Median: `{clean_series.median():,.2f}`")
+
+                st.divider()
+
+                # Pembuatan Grafik Distribusi Gabungan (Histogram + KDE Line)
+                try:
+                    fig_dist = ff.create_distplot(
+                        [clean_series.values], 
+                        group_labels=[target_col], 
+                        bin_size=(clean_series.max() - clean_series.min()) / 30,
+                        colors=['#21918c'],
+                        show_rug=False
+                    )
+                    fig_dist.update_layout(
+                        title=f"Kurva Densitas & Histogram Distribusi: {target_col}",
+                        xaxis_title="Nilai Satuan Fitur",
+                        yaxis_title="Density / Kepadatan Frekuensi",
+                        height=500,
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig_dist, use_container_width=True)
+                except Exception as dist_err:
+                    # Fallback jika library plotly factory mengalami error dalam kalkulasi interval data tertentu
+                    fig_fallback = px.histogram(clean_series, x=target_col, marginal="box", color_discrete_sequence=['#21918c'])
+                    st.plotly_chart(fig_fallback, use_container_width=True)
+            else:
+                st.error("Kuantitas baris data yang valid pada kolom ini terlalu sedikit untuk diekstrak distribusinya.")
+
+    # HALAMAN KETIGA: EVALUASI PERFORMA MODEL & INTERACTIVE CHOOSE MODEL
     elif selected_view == "Ridge Regression - Metrik Performa Model":
         st.subheader("Evaluasi & Komparasi Performa Model")
         
@@ -332,7 +421,6 @@ with tab_eda:
             c2.metric("Mean Absolute Error (MAE)", "$15,726.32", delta="Error Terkecil", delta_color="inverse")
             c3.metric("Root Mean Squared Error (RMSE)", "$21,438.90", delta="Resisten Outlier", delta_color="inverse")
             
-            r2_val, mae_val, rmse_val = 0.9260, 15726.32, 21438.90
             err_scale = 1.0
         else:
             c1, c2, c3 = st.columns(3)
@@ -340,7 +428,6 @@ with tab_eda:
             c2.metric("Mean Absolute Error (MAE)", "$19,842.10", delta="+$4,115.78 Error", delta_color="inverse")
             c3.metric("Root Mean Squared Error (RMSE)", "$28,910.45", delta="+$7,471.55 Error", delta_color="inverse")
             
-            r2_val, mae_val, rmse_val = 0.8815, 19842.10, 28910.45
             err_scale = 1.45 # Memperlebar sebaran error untuk model baseline
 
         st.divider()
@@ -349,7 +436,7 @@ with tab_eda:
         col_g1, col_g2 = st.columns(2)
         
         with col_g1:
-            st.markdown("### 📊 Analisis Residual Model")
+            st.markdown("### Analisis Residual Model")
             st.write("Grafik menggambarkan varians sisa galat prediksi model pada data uji.")
             np.random.seed(42)
             preds_sim = np.linspace(100000, 500000, 150)
@@ -366,9 +453,7 @@ with tab_eda:
             st.plotly_chart(fig_res, use_container_width=True)
 
         with col_g2:
-            # Karena ini Model Regresi (Prediksi Angka Kontinu) dan Bukan Klasifikasi, 
-            # Standar Pengganti Confusion Matrix yang Tepat Adalah Error Binning Matrix (Kategori Deviasi Prediksi)
-            st.markdown("### 🎯 Error Breakdown Matrix (Analogi Confusion Matrix)")
+            st.markdown("### Error Breakdown Matrix (Analogi Confusion Matrix)")
             st.write("Distribusi akurasi tebakan harga berdasarkan rentang margin error dolar asli.")
             
             # Simulasi Matrix Distribusi Deviasi Harga Properti
