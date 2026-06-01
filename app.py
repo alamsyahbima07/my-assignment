@@ -84,7 +84,7 @@ with tab_home:
             Features strict missing value handling and logarithmic target transformations.
             """)
             st.write("**R² = 92.60%** · **MAE = $15,726.32**")
-            st.info("👉 Test bulk uploads in the **🤖 ML Engineer** tab.")
+            st.info("👉 Test uploads in the **🤖 Model Machine Learning House Prediction** tab.")
 
     with p2:
         with st.container(border=True):
